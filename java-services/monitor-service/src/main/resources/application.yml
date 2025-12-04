@@ -1,0 +1,135 @@
+spring:
+  application:
+    name: monitor-service
+  
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/rag_db}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+  
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URL:http://localhost:9200}
+    username: ${ELASTICSEARCH_USERNAME:}
+    password: ${ELASTICSEARCH_PASSWORD:}
+    connection-timeout: 5s
+    socket-timeout: 30s
+  
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:rag-system}
+        group: DEFAULT_GROUP
+        service: ${spring.application.name}
+        metadata:
+          version: 1.0.0
+          region: cn-east
+      config:
+        server-addr: ${NACOS_SERVER:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:rag-system}
+        group: DEFAULT_GROUP
+        file-extension: yaml
+        refresh-enabled: true
+        shared-configs:
+          - data-id: common-config.yaml
+            refresh: true
+    
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:localhost:8858}
+        port: 8729
+      datasource:
+        flow:
+          nacos:
+            server-addr: ${NACOS_SERVER:localhost:8848}
+            dataId: ${spring.application.name}-flow-rules
+            groupId: SENTINEL_GROUP
+            rule-type: flow
+        degrade:
+          nacos:
+            server-addr: ${NACOS_SERVER:localhost:8848}
+            dataId: ${spring.application.name}-degrade-rules
+            groupId: SENTINEL_GROUP
+            rule-type: degrade
+      eager: true
+
+  # Zipkin 链路追踪
+  zipkin:
+    base-url: ${ZIPKIN_URL:http://localhost:9411}
+    sender:
+      type: web
+  
+  sleuth:
+    sampler:
+      probability: ${SLEUTH_SAMPLE_RATE:1.0}
+
+# Server Configuration
+server:
+  port: ${SERVER_PORT:8084}
+  shutdown: graceful
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+
+# Management Endpoints (Actuator + Prometheus)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.rag.ops.monitor: DEBUG
+    org.springframework.data.elasticsearch: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/monitor-service.log
+    max-size: 100MB
+    max-history: 30
+
+# Application Configuration
+app:
+  log:
+    retention-days: 30
+  metric:
+    retention-days: 7

@@ -1,0 +1,360 @@
+{
+  "dashboard": {
+    "title": "业务指标监控 (文档、查询、Token)",
+    "tags": ["business", "documents", "queries", "tokens"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "文档处理速率",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(rate(document_processing_total[5m]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value",
+          "textMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "decimals": 2
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "RAG 查询速率",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(rate(rag_query_total[5m]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value",
+          "textMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "decimals": 2
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "LLM Token 消耗速率",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 6, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(rate(llm_token_usage[5m]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value",
+          "textMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "decimals": 0
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "向量生成速率",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 6, "x": 18, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(rate(embedding_generation_total[5m]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value",
+          "textMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "decimals": 2
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "文档处理趋势",
+        "type": "graph",
+        "gridPos": {"h": 10, "w": 12, "x": 0, "y": 6},
+        "targets": [
+          {
+            "expr": "sum(rate(document_processing_total[5m]))",
+            "legendFormat": "处理成功",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(document_processing_failed_total[5m]))",
+            "legendFormat": "处理失败",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Documents/sec"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true, "alignAsTable": true, "avg": true, "max": true, "current": true, "values": true},
+        "seriesOverrides": [
+          {
+            "alias": "处理失败",
+            "color": "red"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "文档处理耗时 (P95)",
+        "type": "graph",
+        "gridPos": {"h": 10, "w": 12, "x": 12, "y": 6},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(document_processing_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "P95",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(document_processing_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "P50",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Duration"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true, "alignAsTable": true, "avg": true, "max": true, "current": true, "values": true}
+      },
+      {
+        "id": 7,
+        "title": "RAG 查询趋势",
+        "type": "graph",
+        "gridPos": {"h": 10, "w": 12, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "sum(rate(rag_query_total[5m]))",
+            "legendFormat": "查询成功",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(rag_query_failed_total[5m]))",
+            "legendFormat": "查询失败",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Queries/sec"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true, "alignAsTable": true, "avg": true, "max": true, "current": true, "values": true},
+        "seriesOverrides": [
+          {
+            "alias": "查询失败",
+            "color": "red"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "RAG 查询耗时分布",
+        "type": "graph",
+        "gridPos": {"h": 10, "w": 12, "x": 12, "y": 16},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(rag_query_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "P95",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(rag_query_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "P50",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Duration"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true, "alignAsTable": true, "avg": true, "max": true, "current": true, "values": true}
+      },
+      {
+        "id": 9,
+        "title": "LLM 调用统计",
+        "type": "graph",
+        "gridPos": {"h": 10, "w": 12, "x": 0, "y": 26},
+        "targets": [
+          {
+            "expr": "sum(rate(llm_call_total[5m]))",
+            "legendFormat": "调用成功",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(llm_call_failed_total[5m]))",
+            "legendFormat": "调用失败",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Calls/sec"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true, "alignAsTable": true, "avg": true, "max": true, "current": true, "values": true},
+        "seriesOverrides": [
+          {
+            "alias": "调用失败",
+            "color": "red"
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "LLM 调用耗时",
+        "type": "graph",
+        "gridPos": {"h": 10, "w": 12, "x": 12, "y": 26},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(llm_call_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "P95",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(llm_call_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "P50",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Duration"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true, "alignAsTable": true, "avg": true, "max": true, "current": true, "values": true}
+      },
+      {
+        "id": 11,
+        "title": "LLM Token 消耗趋势",
+        "type": "graph",
+        "gridPos": {"h": 10, "w": 12, "x": 0, "y": 36},
+        "targets": [
+          {
+            "expr": "sum(rate(llm_token_usage[5m])) by (model)",
+            "legendFormat": "{{model}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Tokens/sec"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true, "alignAsTable": true, "avg": true, "max": true, "current": true, "values": true}
+      },
+      {
+        "id": 12,
+        "title": "向量生成统计",
+        "type": "graph",
+        "gridPos": {"h": 10, "w": 12, "x": 12, "y": 36},
+        "targets": [
+          {
+            "expr": "sum(rate(embedding_generation_total[5m]))",
+            "legendFormat": "生成成功",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(embedding_generation_failed_total[5m]))",
+            "legendFormat": "生成失败",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Embeddings/sec"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true, "alignAsTable": true, "avg": true, "max": true, "current": true, "values": true},
+        "seriesOverrides": [
+          {
+            "alias": "生成失败",
+            "color": "red"
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "title": "业务成功率汇总",
+        "type": "table",
+        "gridPos": {"h": 10, "w": 24, "x": 0, "y": 46},
+        "targets": [
+          {
+            "expr": "sum(rate(document_processing_total[5m])) / (sum(rate(document_processing_total[5m])) + sum(rate(document_processing_failed_total[5m])))",
+            "format": "table",
+            "instant": true,
+            "legendFormat": "文档处理成功率",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(rag_query_total[5m])) / (sum(rate(rag_query_total[5m])) + sum(rate(rag_query_failed_total[5m])))",
+            "format": "table",
+            "instant": true,
+            "legendFormat": "RAG 查询成功率",
+            "refId": "B"
+          },
+          {
+            "expr": "sum(rate(llm_call_total[5m])) / (sum(rate(llm_call_total[5m])) + sum(rate(llm_call_failed_total[5m])))",
+            "format": "table",
+            "instant": true,
+            "legendFormat": "LLM 调用成功率",
+            "refId": "C"
+          },
+          {
+            "expr": "sum(rate(embedding_generation_total[5m])) / (sum(rate(embedding_generation_total[5m])) + sum(rate(embedding_generation_failed_total[5m])))",
+            "format": "table",
+            "instant": true,
+            "legendFormat": "向量生成成功率",
+            "refId": "D"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true},
+              "renameByName": {
+                "Value": "成功率"
+              }
+            }
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "decimals": 2
+          }
+        }
+      }
+    ]
+  }
+}

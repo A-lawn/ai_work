@@ -1,0 +1,19 @@
+[
+  {
+    "resource": "rag-query-service-call",
+    "grade": 0,
+    "count": 5000,
+    "timeWindow": 15,
+    "minRequestAmount": 5,
+    "slowRatioThreshold": 0.6,
+    "statIntervalMs": 1000
+  },
+  {
+    "resource": "POST:/api/v1/sessions/query",
+    "grade": 1,
+    "count": 0.4,
+    "timeWindow": 10,
+    "minRequestAmount": 5,
+    "statIntervalMs": 1000
+  }
+]

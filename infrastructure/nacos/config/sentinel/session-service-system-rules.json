@@ -1,0 +1,9 @@
+[
+  {
+    "resource": "system",
+    "highestSystemLoad": 8.0,
+    "avgRt": 3000,
+    "maxThread": 100,
+    "qps": 500
+  }
+]

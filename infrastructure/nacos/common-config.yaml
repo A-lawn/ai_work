@@ -1,0 +1,54 @@
+# 公共配置文件 - 所有服务共享
+# 在 Nacos 中创建 Data ID: common-config.yaml, Group: DEFAULT_GROUP
+
+# 数据库配置
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+# Redis 配置
+  redis:
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
+    timeout: 3000ms
+
+# 链路追踪配置
+  sleuth:
+    sampler:
+      probability: 1.0
+    web:
+      skip-pattern: /actuator.*|/health.*
+
+# 日志配置
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    max-size: 100MB
+    max-history: 30
+
+# Actuator 配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}

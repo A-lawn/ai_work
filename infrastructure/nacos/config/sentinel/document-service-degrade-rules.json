@@ -1,0 +1,19 @@
+[
+  {
+    "resource": "processDocument",
+    "grade": 0,
+    "count": 0.5,
+    "timeWindow": 10,
+    "minRequestAmount": 5,
+    "statIntervalMs": 1000,
+    "slowRatioThreshold": 0.5
+  },
+  {
+    "resource": "pythonServiceCall",
+    "grade": 2,
+    "count": 3000,
+    "timeWindow": 10,
+    "minRequestAmount": 5,
+    "statIntervalMs": 1000
+  }
+]

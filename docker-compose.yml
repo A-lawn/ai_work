@@ -1,0 +1,627 @@
+version: '3.8'
+
+services:
+  # ==================== 基础设施服务 ====================
+  
+  # 服务注册中心和配置中心
+  nacos:
+    image: nacos/nacos-server:v2.2.3
+    container_name: nacos
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    environment:
+      - MODE=standalone
+      - PREFER_HOST_MODE=hostname
+      - SPRING_DATASOURCE_PLATFORM=embedded
+    volumes:
+      - nacos_data:/home/nacos/data
+      - nacos_logs:/home/nacos/logs
+    networks:
+      - rag-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Nacos 配置初始化
+  nacos-init:
+    image: curlimages/curl:latest
+    container_name: nacos-init
+    volumes:
+      - ./infrastructure/nacos/init-nacos.sh:/init-nacos.sh
+      - ./infrastructure/nacos/config:/nacos-config
+    command: sh /init-nacos.sh
+    networks:
+      - rag-network
+    depends_on:
+      nacos:
+        condition: service_healthy
+    restart: "no"
+
+  # Sentinel 控制台
+  sentinel-dashboard:
+    image: bladex/sentinel-dashboard:latest
+    container_name: sentinel-dashboard
+    ports:
+      - "8858:8858"
+    environment:
+      - JAVA_OPTS=-Dserver.port=8858 -Dcsp.sentinel.dashboard.server=localhost:8858 -Dnacos.addr=nacos:8848 -Dnacos.namespace=rag-system
+    volumes:
+      - ./infrastructure/sentinel/application.properties:/application.properties
+      - sentinel_logs:/var/log/sentinel
+    networks:
+      - rag-network
+    depends_on:
+      nacos:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8858/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 消息队列
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin123
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./infrastructure/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json
+    networks:
+      - rag-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RabbitMQ 初始化
+  rabbitmq-init:
+    image: curlimages/curl:latest
+    container_name: rabbitmq-init
+    volumes:
+      - ./infrastructure/rabbitmq/init-rabbitmq.sh:/init-rabbitmq.sh
+    command: sh /init-rabbitmq.sh
+    networks:
+      - rag-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: "no"
+
+  # 链路追踪
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    environment:
+      - STORAGE_TYPE=elasticsearch
+      - ES_HOSTS=http://elasticsearch:9200
+      - ES_INDEX=zipkin
+      - JAVA_OPTS=-Xms256m -Xmx512m
+    networks:
+      - rag-network
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9411/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 监控 - Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - rag-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 监控 - Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./infrastructure/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - rag-network
+    depends_on:
+      - prometheus
+
+  # ==================== 数据存储服务 ====================
+  
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=rag_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - rag-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass redis123
+    volumes:
+      - redis_data:/data
+    networks:
+      - rag-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ChromaDB 向量数据库
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: chroma
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+    networks:
+      - rag-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Elasticsearch 日志存储
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: elasticsearch
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - rag-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO 对象存储
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=admin123456
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - rag-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== Java 微服务 ====================
+  
+  # API 网关服务
+  gateway-service:
+    build:
+      context: ./java-services/gateway-service
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_SERVER=nacos:8848
+      - SENTINEL_DASHBOARD=sentinel-dashboard:8858
+      - ZIPKIN_URL=http://zipkin:9411
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=redis123
+    networks:
+      - rag-network
+    depends_on:
+      nacos:
+        condition: service_healthy
+      sentinel-dashboard:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: on-failure
+
+  # 文档管理服务
+  document-service:
+    build:
+      context: ./java-services/document-service
+      dockerfile: Dockerfile
+    container_name: document-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_SERVER=nacos:8848
+      - SENTINEL_DASHBOARD=sentinel-dashboard:8858
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/rag_db
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=postgres123
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=redis123
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=admin
+      - MINIO_SECRET_KEY=admin123456
+      - ZIPKIN_URL=http://zipkin:9411
+    networks:
+      - rag-network
+    depends_on:
+      nacos:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    deploy:
+      replicas: 2
+    restart: on-failure
+
+  # 会话管理服务
+  session-service:
+    build:
+      context: ./java-services/session-service
+      dockerfile: Dockerfile
+    container_name: session-service
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_SERVER=nacos:8848
+      - SENTINEL_DASHBOARD=sentinel-dashboard:8858
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/rag_db
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=postgres123
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=redis123
+      - ZIPKIN_URL=http://zipkin:9411
+    networks:
+      - rag-network
+    depends_on:
+      nacos:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      replicas: 2
+    restart: on-failure
+
+  # 认证授权服务
+  auth-service:
+    build:
+      context: ./java-services/auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_SERVER=nacos:8848
+      - SENTINEL_DASHBOARD=sentinel-dashboard:8858
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/rag_db
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=postgres123
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=redis123
+      - ZIPKIN_URL=http://zipkin:9411
+      - JWT_SECRET=your-secret-key-change-in-production
+    networks:
+      - rag-network
+    depends_on:
+      nacos:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: on-failure
+
+  # 监控日志服务
+  monitor-service:
+    build:
+      context: ./java-services/monitor-service
+      dockerfile: Dockerfile
+    container_name: monitor-service
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_SERVER=nacos:8848
+      - SENTINEL_DASHBOARD=sentinel-dashboard:8858
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/rag_db
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=postgres123
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - ZIPKIN_URL=http://zipkin:9411
+    networks:
+      - rag-network
+    depends_on:
+      nacos:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    restart: on-failure
+
+  # 配置管理服务
+  config-service:
+    build:
+      context: ./java-services/config-service
+      dockerfile: Dockerfile
+    container_name: config-service
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_SERVER=nacos:8848
+      - SENTINEL_DASHBOARD=sentinel-dashboard:8858
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/rag_db
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=postgres123
+      - ZIPKIN_URL=http://zipkin:9411
+    networks:
+      - rag-network
+    depends_on:
+      nacos:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+
+  # ==================== Python 微服务 ====================
+  
+  # 文档处理服务
+  document-processing-service:
+    build:
+      context: ./python-services/document-processing-service
+      dockerfile: Dockerfile
+    container_name: document-processing-service
+    ports:
+      - "9001:9001"
+    environment:
+      - NACOS_SERVER=nacos:8848
+      - CHROMA_HOST=chroma
+      - CHROMA_PORT=8000
+      - RABBITMQ_URL=amqp://admin:admin123@rabbitmq:5672
+      - REDIS_URL=redis://:redis123@redis:6379/0
+      - ZIPKIN_URL=http://zipkin:9411
+    networks:
+      - rag-network
+    depends_on:
+      nacos:
+        condition: service_healthy
+      chroma:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    deploy:
+      replicas: 2
+    restart: on-failure
+
+  # RAG 查询服务
+  rag-query-service:
+    build:
+      context: ./python-services/rag-query-service
+      dockerfile: Dockerfile
+    container_name: rag-query-service
+    ports:
+      - "9002:9002"
+    environment:
+      - NACOS_SERVER=nacos:8848
+      - CHROMA_HOST=chroma
+      - CHROMA_PORT=8000
+      - REDIS_URL=redis://:redis123@redis:6379/0
+      - ZIPKIN_URL=http://zipkin:9411
+    networks:
+      - rag-network
+    depends_on:
+      nacos:
+        condition: service_healthy
+      chroma:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      replicas: 3
+    restart: on-failure
+
+  # 嵌入模型服务
+  embedding-service:
+    build:
+      context: ./python-services/embedding-service
+      dockerfile: Dockerfile
+    container_name: embedding-service
+    ports:
+      - "9003:9003"
+    environment:
+      - NACOS_SERVER=nacos:8848
+      - REDIS_URL=redis://:redis123@redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_API_BASE=${OPENAI_API_BASE:-https://api.openai.com/v1}
+      - ZIPKIN_URL=http://zipkin:9411
+    networks:
+      - rag-network
+    depends_on:
+      nacos:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      replicas: 2
+    restart: on-failure
+
+  # 大模型服务
+  llm-service:
+    build:
+      context: ./python-services/llm-service
+      dockerfile: Dockerfile
+    container_name: llm-service
+    ports:
+      - "9004:9004"
+    environment:
+      - NACOS_SERVER=nacos:8848
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_API_BASE=${OPENAI_API_BASE:-https://api.openai.com/v1}
+      - AZURE_OPENAI_KEY=${AZURE_OPENAI_KEY}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - ZIPKIN_URL=http://zipkin:9411
+    networks:
+      - rag-network
+    depends_on:
+      nacos:
+        condition: service_healthy
+    deploy:
+      replicas: 2
+    restart: on-failure
+
+  # Celery Worker（异步任务）
+  celery-worker:
+    build:
+      context: ./python-services/document-processing-service
+      dockerfile: Dockerfile
+    container_name: celery-worker
+    command: celery -A app.celery_app worker --loglevel=info --concurrency=2 --queues=batch_processing,document_processing
+    environment:
+      - REDIS_URL=redis://:redis123@redis:6379/0
+      - CHROMA_HOST=chroma
+      - CHROMA_PORT=8000
+      - RABBITMQ_URL=amqp://admin:admin123@rabbitmq:5672
+      - NACOS_SERVER=nacos:8848
+      - EMBEDDING_SERVICE_URL=http://embedding-service:9003
+    networks:
+      - rag-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      chroma:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    deploy:
+      replicas: 2
+    restart: on-failure
+  
+  # 批量处理消费者
+  batch-consumer:
+    build:
+      context: ./python-services/document-processing-service
+      dockerfile: Dockerfile
+    container_name: batch-consumer
+    command: python -m app.batch_consumer
+    environment:
+      - REDIS_URL=redis://:redis123@redis:6379/0
+      - CHROMA_HOST=chroma
+      - CHROMA_PORT=8000
+      - RABBITMQ_URL=amqp://admin:admin123@rabbitmq:5672
+      - NACOS_SERVER=nacos:8848
+      - EMBEDDING_SERVICE_URL=http://embedding-service:9003
+    networks:
+      - rag-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+
+  # ==================== 前端服务 ====================
+  
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "80:80"
+    networks:
+      - rag-network
+    depends_on:
+      - gateway-service
+    restart: on-failure
+
+volumes:
+  nacos_data:
+  nacos_logs:
+  sentinel_logs:
+  rabbitmq_data:
+  prometheus_data:
+  grafana_data:
+  postgres_data:
+  redis_data:
+  chroma_data:
+  es_data:
+  minio_data:
+
+networks:
+  rag-network:
+    driver: bridge

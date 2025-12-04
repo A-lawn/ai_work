@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: auth-service
+  cloud:
+    nacos:
+      config:
+        server-addr: ${NACOS_SERVER:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        group: DEFAULT_GROUP
+        file-extension: yaml
+        shared-configs:
+          - data-id: common-config.yaml
+            refresh: true
+          - data-id: auth-service.yaml
+            refresh: true

@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: document-service
+  
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:rag-system}
+        group: DEFAULT_GROUP
+        metadata:
+          version: 1.0.0
+          region: cn-east
+      config:
+        server-addr: ${NACOS_SERVER:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:rag-system}
+        group: DEFAULT_GROUP
+        file-extension: yaml
+        shared-configs:
+          - data-id: common-config.yaml
+            refresh: true

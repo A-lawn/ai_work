@@ -1,0 +1,38 @@
+# Zipkin 配置文件
+
+# 存储配置
+storage:
+  type: elasticsearch
+  elasticsearch:
+    hosts: http://elasticsearch:9200
+    index: zipkin
+    date-separator: '-'
+    index-shards: 5
+    index-replicas: 1
+
+# 采样率配置
+zipkin:
+  collector:
+    sample-rate: 1.0  # 100% 采样率
+
+# 服务器配置
+server:
+  port: 9411
+
+# UI 配置
+zipkin:
+  ui:
+    enabled: true
+    basepath: /zipkin
+
+# 查询配置
+zipkin:
+  query:
+    enabled: true
+    lookback: 86400000  # 24小时
+    limit: 1000
+
+# 日志配置
+logging:
+  level:
+    zipkin2: INFO

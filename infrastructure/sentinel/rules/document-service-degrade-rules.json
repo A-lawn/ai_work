@@ -1,0 +1,19 @@
+[
+  {
+    "resource": "document-processing-service-call",
+    "grade": 0,
+    "count": 2000,
+    "timeWindow": 10,
+    "minRequestAmount": 5,
+    "slowRatioThreshold": 0.5,
+    "statIntervalMs": 1000
+  },
+  {
+    "resource": "POST:/api/v1/documents/upload",
+    "grade": 1,
+    "count": 0.3,
+    "timeWindow": 10,
+    "minRequestAmount": 5,
+    "statIntervalMs": 1000
+  }
+]

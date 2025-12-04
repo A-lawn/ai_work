@@ -1,0 +1,42 @@
+# Session Service 专属配置
+
+server:
+  port: 8082
+
+spring:
+  application:
+    name: session-service
+
+# 会话配置
+session:
+  max-history-messages: 10
+  max-token-count: 4000
+  cache-ttl: 3600  # 1小时
+  sliding-window-size: 10
+
+# Sentinel 配置
+spring.cloud.sentinel:
+  transport:
+    dashboard: sentinel-dashboard:8858
+  datasource:
+    flow:
+      nacos:
+        server-addr: ${spring.cloud.nacos.discovery.server-addr}
+        namespace: ${spring.cloud.nacos.discovery.namespace}
+        dataId: session-service-flow-rules
+        groupId: SENTINEL_GROUP
+        rule-type: flow
+    degrade:
+      nacos:
+        server-addr: ${spring.cloud.nacos.discovery.server-addr}
+        namespace: ${spring.cloud.nacos.discovery.namespace}
+        dataId: session-service-degrade-rules
+        groupId: SENTINEL_GROUP
+        rule-type: degrade
+    system:
+      nacos:
+        server-addr: ${spring.cloud.nacos.discovery.server-addr}
+        namespace: ${spring.cloud.nacos.discovery.namespace}
+        dataId: session-service-system-rules
+        groupId: SENTINEL_GROUP
+        rule-type: system

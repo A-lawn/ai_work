@@ -1,0 +1,152 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'rag-ops-cluster'
+    environment: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+      # 可以配置 Alertmanager 地址，例如：
+      # - targets: ['alertmanager:9093']
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - "alerting_rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Java 微服务
+  - job_name: 'gateway-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['gateway-service:8080']
+        labels:
+          service: 'gateway-service'
+          type: 'java'
+
+  - job_name: 'document-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['document-service:8081']
+        labels:
+          service: 'document-service'
+          type: 'java'
+
+  - job_name: 'session-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['session-service:8082']
+        labels:
+          service: 'session-service'
+          type: 'java'
+
+  - job_name: 'auth-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['auth-service:8083']
+        labels:
+          service: 'auth-service'
+          type: 'java'
+
+  - job_name: 'monitor-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['monitor-service:8084']
+        labels:
+          service: 'monitor-service'
+          type: 'java'
+
+  - job_name: 'config-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['config-service:8085']
+        labels:
+          service: 'config-service'
+          type: 'java'
+
+  # Python 微服务
+  - job_name: 'document-processing-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['document-processing-service:9001']
+        labels:
+          service: 'document-processing-service'
+          type: 'python'
+
+  - job_name: 'rag-query-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['rag-query-service:9002']
+        labels:
+          service: 'rag-query-service'
+          type: 'python'
+
+  - job_name: 'embedding-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['embedding-service:9003']
+        labels:
+          service: 'embedding-service'
+          type: 'python'
+
+  - job_name: 'llm-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['llm-service:9004']
+        labels:
+          service: 'llm-service'
+          type: 'python'
+
+  # 基础设施监控
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'sentinel-dashboard'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['sentinel-dashboard:8858']
+        labels:
+          service: 'sentinel-dashboard'
+          type: 'infrastructure'
+
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+        labels:
+          service: 'postgres'
+          type: 'database'
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+        labels:
+          service: 'redis'
+          type: 'cache'
+
+  - job_name: 'rabbitmq'
+    static_configs:
+      - targets: ['rabbitmq:15672']
+        labels:
+          service: 'rabbitmq'
+          type: 'message-queue'
+    metrics_path: '/api/metrics'
+
+  - job_name: 'elasticsearch'
+    static_configs:
+      - targets: ['elasticsearch:9200']
+        labels:
+          service: 'elasticsearch'
+          type: 'search'
+
+  - job_name: 'nacos'
+    static_configs:
+      - targets: ['nacos:8848']
+        labels:
+          service: 'nacos'
+          type: 'service-registry'
+    metrics_path: '/nacos/actuator/prometheus'

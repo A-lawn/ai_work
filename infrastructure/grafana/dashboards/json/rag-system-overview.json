@@ -1,0 +1,31 @@
+{
+  "dashboard": {
+    "title": "RAG System Overview",
+    "tags": ["rag", "microservices"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Service Health Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=~\".*-service\"}",
+            "legendFormat": "{{job}}"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Request Rate (QPS)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "{{job}}"
+          }
+        ]
+      }
+    ]
+  }
+}

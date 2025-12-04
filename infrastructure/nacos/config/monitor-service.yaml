@@ -1,0 +1,51 @@
+# Monitor Service 专属配置
+
+server:
+  port: 8084
+
+spring:
+  application:
+    name: monitor-service
+
+# Elasticsearch 配置
+elasticsearch:
+  index-prefix: rag-logs
+  bulk-size: 100
+  flush-interval: 5000
+
+# 监控配置
+monitoring:
+  metrics:
+    retention-days: 30
+  logs:
+    retention-days: 90
+  alert:
+    enabled: true
+    check-interval: 60000  # 1分钟
+
+# Sentinel 配置
+spring.cloud.sentinel:
+  transport:
+    dashboard: sentinel-dashboard:8858
+  datasource:
+    flow:
+      nacos:
+        server-addr: ${spring.cloud.nacos.discovery.server-addr}
+        namespace: ${spring.cloud.nacos.discovery.namespace}
+        dataId: monitor-service-flow-rules
+        groupId: SENTINEL_GROUP
+        rule-type: flow
+    degrade:
+      nacos:
+        server-addr: ${spring.cloud.nacos.discovery.server-addr}
+        namespace: ${spring.cloud.nacos.discovery.namespace}
+        dataId: monitor-service-degrade-rules
+        groupId: SENTINEL_GROUP
+        rule-type: degrade
+    system:
+      nacos:
+        server-addr: ${spring.cloud.nacos.discovery.server-addr}
+        namespace: ${spring.cloud.nacos.discovery.namespace}
+        dataId: monitor-service-system-rules
+        groupId: SENTINEL_GROUP
+        rule-type: system

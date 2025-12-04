@@ -1,0 +1,56 @@
+# Document Service 专属配置
+
+server:
+  port: 8081
+
+spring:
+  application:
+    name: document-service
+  
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+      enabled: true
+
+# MinIO 配置
+minio:
+  bucket-name: rag-documents
+  auto-create-bucket: true
+
+# 文档处理配置
+document:
+  supported-formats:
+    - pdf
+    - docx
+    - txt
+    - md
+  max-file-size: 52428800  # 50MB
+  processing-timeout: 300000  # 5分钟
+
+# Sentinel 配置
+spring.cloud.sentinel:
+  transport:
+    dashboard: sentinel-dashboard:8858
+  datasource:
+    flow:
+      nacos:
+        server-addr: ${spring.cloud.nacos.discovery.server-addr}
+        namespace: ${spring.cloud.nacos.discovery.namespace}
+        dataId: document-service-flow-rules
+        groupId: SENTINEL_GROUP
+        rule-type: flow
+    degrade:
+      nacos:
+        server-addr: ${spring.cloud.nacos.discovery.server-addr}
+        namespace: ${spring.cloud.nacos.discovery.namespace}
+        dataId: document-service-degrade-rules
+        groupId: SENTINEL_GROUP
+        rule-type: degrade
+    system:
+      nacos:
+        server-addr: ${spring.cloud.nacos.discovery.server-addr}
+        namespace: ${spring.cloud.nacos.discovery.namespace}
+        dataId: document-service-system-rules
+        groupId: SENTINEL_GROUP
+        rule-type: system

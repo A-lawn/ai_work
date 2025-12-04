@@ -1,0 +1,43 @@
+# Config Service 专属配置
+
+server:
+  port: 8085
+
+spring:
+  application:
+    name: config-service
+
+# 配置管理
+config:
+  validation:
+    enabled: true
+  sync-to-nacos:
+    enabled: true
+  cache-ttl: 300  # 5分钟
+
+# Sentinel 配置
+spring.cloud.sentinel:
+  transport:
+    dashboard: sentinel-dashboard:8858
+  datasource:
+    flow:
+      nacos:
+        server-addr: ${spring.cloud.nacos.discovery.server-addr}
+        namespace: ${spring.cloud.nacos.discovery.namespace}
+        dataId: config-service-flow-rules
+        groupId: SENTINEL_GROUP
+        rule-type: flow
+    degrade:
+      nacos:
+        server-addr: ${spring.cloud.nacos.discovery.server-addr}
+        namespace: ${spring.cloud.nacos.discovery.namespace}
+        dataId: config-service-degrade-rules
+        groupId: SENTINEL_GROUP
+        rule-type: degrade
+    system:
+      nacos:
+        server-addr: ${spring.cloud.nacos.discovery.server-addr}
+        namespace: ${spring.cloud.nacos.discovery.namespace}
+        dataId: config-service-system-rules
+        groupId: SENTINEL_GROUP
+        rule-type: system

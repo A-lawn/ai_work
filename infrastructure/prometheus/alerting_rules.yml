@@ -1,0 +1,205 @@
+groups:
+  - name: service_alerts
+    interval: 30s
+    rules:
+      # 服务下线告警
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "服务 {{ $labels.job }} 已下线"
+          description: "服务 {{ $labels.job }} 在过去 1 分钟内无法访问"
+
+      # 高错误率告警
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "服务 {{ $labels.job }} 错误率过高"
+          description: "服务 {{ $labels.job }} 的 5xx 错误率超过 5%"
+
+      # 慢响应告警
+      - alert: SlowResponse
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "服务 {{ $labels.job }} 响应时间过长"
+          description: "服务 {{ $labels.job }} 的 P95 响应时间超过 3 秒"
+
+      # 高 CPU 使用率告警
+      - alert: HighCPUUsage
+        expr: process_cpu_usage > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "服务 {{ $labels.job }} CPU 使用率过高"
+          description: "服务 {{ $labels.job }} 的 CPU 使用率超过 80%"
+
+      # 高内存使用率告警
+      - alert: HighMemoryUsage
+        expr: jvm_memory_used_bytes / jvm_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "服务 {{ $labels.job }} 内存使用率过高"
+          description: "服务 {{ $labels.job }} 的内存使用率超过 90%"
+
+  - name: sentinel_alerts
+    interval: 30s
+    rules:
+      # Sentinel 限流告警
+      - alert: SentinelBlocked
+        expr: rate(sentinel_block_qps[5m]) > 10
+        for: 2m
+        labels:
+          severity: info
+        annotations:
+          summary: "服务 {{ $labels.job }} 触发限流"
+          description: "服务 {{ $labels.job }} 在过去 5 分钟内触发限流超过 10 次/秒"
+
+      # Sentinel 熔断告警
+      - alert: SentinelCircuitBreakerOpen
+        expr: sentinel_circuit_breaker_state == 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "服务 {{ $labels.job }} 熔断器打开"
+          description: "服务 {{ $labels.job }} 的熔断器已打开，服务调用被降级"
+
+      # Sentinel 高拒绝率告警
+      - alert: SentinelHighBlockRate
+        expr: rate(sentinel_block_qps[5m]) / rate(sentinel_pass_qps[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "服务 {{ $labels.job }} 限流拒绝率过高"
+          description: "服务 {{ $labels.job }} 的请求拒绝率超过 10%"
+
+      # Sentinel 异常率告警
+      - alert: SentinelHighExceptionRate
+        expr: rate(sentinel_exception_qps[5m]) / rate(sentinel_pass_qps[5m]) > 0.05
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "服务 {{ $labels.job }} 异常率过高"
+          description: "服务 {{ $labels.job }} 的异常率超过 5%"
+
+  - name: database_alerts
+    interval: 30s
+    rules:
+      # PostgreSQL 连接数告警
+      - alert: PostgreSQLHighConnections
+        expr: pg_stat_database_numbackends > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL 连接数过高"
+          description: "PostgreSQL 当前连接数为 {{ $value }}，接近最大连接数"
+
+      # Redis 内存使用告警
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis 内存使用率过高"
+          description: "Redis 内存使用率超过 80%"
+
+      # Redis 连接数告警
+      - alert: RedisHighConnections
+        expr: redis_connected_clients > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis 连接数过高"
+          description: "Redis 当前连接数为 {{ $value }}"
+
+  - name: business_alerts
+    interval: 30s
+    rules:
+      # 文档处理失败率告警
+      - alert: HighDocumentProcessingFailureRate
+        expr: rate(document_processing_failed_total[5m]) / rate(document_processing_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "文档处理失败率过高"
+          description: "文档处理失败率超过 10%"
+
+      # 查询响应时间告警
+      - alert: SlowQueryResponse
+        expr: histogram_quantile(0.95, rate(rag_query_duration_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RAG 查询响应时间过长"
+          description: "RAG 查询 P95 响应时间超过 5 秒"
+
+      # LLM 调用失败率告警
+      - alert: HighLLMFailureRate
+        expr: rate(llm_call_failed_total[5m]) / rate(llm_call_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LLM 调用失败率过高"
+          description: "LLM 调用失败率超过 5%"
+
+      # 向量检索失败率告警
+      - alert: HighEmbeddingFailureRate
+        expr: rate(embedding_generation_failed_total[5m]) / rate(embedding_generation_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "向量生成失败率过高"
+          description: "向量生成失败率超过 5%"
+
+  - name: infrastructure_alerts
+    interval: 30s
+    rules:
+      # RabbitMQ 队列堆积告警
+      - alert: RabbitMQQueueBacklog
+        expr: rabbitmq_queue_messages > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RabbitMQ 队列 {{ $labels.queue }} 消息堆积"
+          description: "队列 {{ $labels.queue }} 中有 {{ $value }} 条消息待处理"
+
+      # Elasticsearch 集群健康告警
+      - alert: ElasticsearchClusterUnhealthy
+        expr: elasticsearch_cluster_health_status{color="red"} == 1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Elasticsearch 集群状态异常"
+          description: "Elasticsearch 集群状态为 RED"
+
+      # Nacos 服务实例数告警
+      - alert: NacosServiceInstanceDown
+        expr: nacos_service_instance_count < 1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Nacos 服务 {{ $labels.service }} 无可用实例"
+          description: "服务 {{ $labels.service }} 的所有实例都已下线"

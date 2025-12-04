@@ -1,0 +1,24 @@
+[
+  {
+    "resource": "GET:/api/v1/documents/{id}",
+    "grade": 1,
+    "paramIdx": 0,
+    "count": 10,
+    "durationInSec": 1,
+    "controlBehavior": 0,
+    "maxQueueingTimeMs": 0,
+    "burstCount": 0,
+    "clusterMode": false
+  },
+  {
+    "resource": "GET:/api/v1/sessions/{id}/history",
+    "grade": 1,
+    "paramIdx": 0,
+    "count": 20,
+    "durationInSec": 1,
+    "controlBehavior": 0,
+    "maxQueueingTimeMs": 0,
+    "burstCount": 0,
+    "clusterMode": false
+  }
+]

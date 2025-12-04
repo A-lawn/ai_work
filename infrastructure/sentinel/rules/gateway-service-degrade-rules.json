@@ -1,0 +1,28 @@
+[
+  {
+    "resource": "document-service",
+    "grade": 0,
+    "count": 2000,
+    "timeWindow": 10,
+    "minRequestAmount": 5,
+    "slowRatioThreshold": 0.5,
+    "statIntervalMs": 1000
+  },
+  {
+    "resource": "session-service",
+    "grade": 0,
+    "count": 3000,
+    "timeWindow": 10,
+    "minRequestAmount": 5,
+    "slowRatioThreshold": 0.5,
+    "statIntervalMs": 1000
+  },
+  {
+    "resource": "auth-service",
+    "grade": 1,
+    "count": 0.5,
+    "timeWindow": 10,
+    "minRequestAmount": 5,
+    "statIntervalMs": 1000
+  }
+]

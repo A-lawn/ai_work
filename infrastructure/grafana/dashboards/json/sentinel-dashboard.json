@@ -1,0 +1,254 @@
+{
+  "dashboard": {
+    "title": "Sentinel 流控和熔断监控",
+    "tags": ["sentinel", "circuit-breaker", "flow-control"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Sentinel 通过 QPS",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(rate(sentinel_pass_qps[5m]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value",
+          "textMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Sentinel 限流 QPS",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(rate(sentinel_block_qps[5m]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value",
+          "textMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 10, "color": "yellow"},
+                {"value": 50, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Sentinel 异常 QPS",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 6, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(rate(sentinel_exception_qps[5m]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value",
+          "textMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 5, "color": "yellow"},
+                {"value": 20, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "限流拒绝率",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 6, "x": 18, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(rate(sentinel_block_qps[5m])) / (sum(rate(sentinel_pass_qps[5m])) + sum(rate(sentinel_block_qps[5m])))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value",
+          "textMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 0.05, "color": "yellow"},
+                {"value": 0.1, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "各服务 Sentinel 通过/限流 QPS",
+        "type": "graph",
+        "gridPos": {"h": 10, "w": 24, "x": 0, "y": 6},
+        "targets": [
+          {
+            "expr": "sum(rate(sentinel_pass_qps[5m])) by (job)",
+            "legendFormat": "{{job}} - 通过",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(sentinel_block_qps[5m])) by (job)",
+            "legendFormat": "{{job}} - 限流",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "QPS"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true, "alignAsTable": true, "avg": true, "max": true, "current": true, "values": true},
+        "seriesOverrides": [
+          {
+            "alias": "/.*限流.*/",
+            "color": "red",
+            "fill": 2
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "熔断器状态",
+        "type": "graph",
+        "gridPos": {"h": 10, "w": 24, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "sentinel_circuit_breaker_state",
+            "legendFormat": "{{job}} - {{resource}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "State (0=关闭, 1=打开, 2=半开)"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true, "alignAsTable": true, "current": true, "values": true},
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {"type": "value", "value": "0", "text": "关闭"},
+              {"type": "value", "value": "1", "text": "打开"},
+              {"type": "value", "value": "2", "text": "半开"}
+            ]
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Sentinel 平均响应时间",
+        "type": "graph",
+        "gridPos": {"h": 10, "w": 12, "x": 0, "y": 26},
+        "targets": [
+          {
+            "expr": "sentinel_rt",
+            "legendFormat": "{{job}} - {{resource}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "ms", "label": "Response Time"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true, "alignAsTable": true, "avg": true, "max": true, "current": true, "values": true}
+      },
+      {
+        "id": 8,
+        "title": "各资源限流统计",
+        "type": "table",
+        "gridPos": {"h": 10, "w": 12, "x": 12, "y": 26},
+        "targets": [
+          {
+            "expr": "sum(rate(sentinel_block_qps[5m])) by (resource)",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true},
+              "indexByName": {},
+              "renameByName": {
+                "resource": "资源",
+                "Value": "限流 QPS"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Sentinel 成功率",
+        "type": "graph",
+        "gridPos": {"h": 10, "w": 24, "x": 0, "y": 36},
+        "targets": [
+          {
+            "expr": "sum(rate(sentinel_success_qps[5m])) by (job) / sum(rate(sentinel_pass_qps[5m])) by (job)",
+            "legendFormat": "{{job}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percentunit", "label": "Success Rate", "min": 0, "max": 1},
+          {"format": "short"}
+        ],
+        "legend": {"show": true, "alignAsTable": true, "avg": true, "min": true, "current": true, "values": true}
+      }
+    ]
+  }
+}
