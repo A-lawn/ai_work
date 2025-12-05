@@ -4,6 +4,9 @@ LLM Service - Core business logic
 import time
 from typing import AsyncIterator
 from app.adapters import LLMAdapter, OpenAIAdapter, AzureOpenAIAdapter, LocalModelAdapter
+from app.adapters.qwen_adapter import QwenAdapter
+from app.adapters.zhipu_adapter import ZhipuAdapter
+from app.adapters.baichuan_adapter import BaichuanAdapter
 from app.models import GenerateRequest, GenerateResponse, LLMProvider
 from app.config import settings
 from app.logging_config import get_logger
@@ -62,6 +65,24 @@ class LLMService:
                 endpoint=settings.LOCAL_MODEL_ENDPOINT,
                 timeout=settings.OPENAI_TIMEOUT,
                 max_retries=settings.MAX_RETRIES
+            )
+        elif provider == "qwen":
+            return QwenAdapter(
+                model=settings.QWEN_MODEL,
+                api_key=settings.QWEN_API_KEY,
+                timeout=settings.OPENAI_TIMEOUT
+            )
+        elif provider == "zhipu":
+            return ZhipuAdapter(
+                model=settings.ZHIPU_MODEL,
+                api_key=settings.ZHIPU_API_KEY,
+                timeout=settings.OPENAI_TIMEOUT
+            )
+        elif provider == "baichuan":
+            return BaichuanAdapter(
+                model=settings.BAICHUAN_MODEL,
+                api_key=settings.BAICHUAN_API_KEY,
+                timeout=settings.OPENAI_TIMEOUT
             )
         else:
             raise ValueError(f"Unsupported LLM provider: {provider}")
