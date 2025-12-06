@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -41,9 +42,11 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
         String message = "Internal server error";
         int errorCode = 1000;
 
-        if (ex instanceof ResponseStatusException) {
-            ResponseStatusException rse = (ResponseStatusException) ex;
-            status = rse.getStatus();
+        if (ex instanceof ResponseStatusException rse) {
+            HttpStatusCode statusCode = rse.getStatusCode();
+            if (statusCode instanceof HttpStatus httpStatus) {
+                status = httpStatus;
+            }
             message = rse.getReason() != null ? rse.getReason() : status.getReasonPhrase();
         } else if (ex instanceof java.net.ConnectException) {
             status = HttpStatus.SERVICE_UNAVAILABLE;

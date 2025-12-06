@@ -3,16 +3,20 @@ FROM maven:3.8-eclipse-temurin-17 AS builder
 
 WORKDIR /app
 
-# 复制父 POM
-COPY ../../pom.xml ./pom.xml
+# 复制父 POM 和所有子模块的 POM(Maven 需要解析所有模块)
+COPY pom.xml ./
+COPY java-services/gateway-service/pom.xml ./java-services/gateway-service/
+COPY java-services/document-service/pom.xml ./java-services/document-service/
+COPY java-services/session-service/pom.xml ./java-services/session-service/
+COPY java-services/auth-service/pom.xml ./java-services/auth-service/
+COPY java-services/monitor-service/pom.xml ./java-services/monitor-service/
+COPY java-services/config-service/pom.xml ./java-services/config-service/
 
-# 复制服务 POM 和源代码
-COPY pom.xml ./gateway-service/pom.xml
-COPY src ./gateway-service/src
+# 复制服务源代码
+COPY java-services/gateway-service/src ./java-services/gateway-service/src
 
 # 构建应用
-WORKDIR /app/gateway-service
-RUN mvn clean package -DskipTests
+RUN mvn clean package -pl java-services/gateway-service -am -Dmaven.test.skip=true
 
 # 运行阶段
 FROM eclipse-temurin:17-jre-alpine
@@ -20,7 +24,7 @@ FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
 # 复制构建产物
-COPY --from=builder /app/gateway-service/target/*.jar app.jar
+COPY --from=builder /app/java-services/gateway-service/target/*.jar app.jar
 
 # 暴露端口
 EXPOSE 8080

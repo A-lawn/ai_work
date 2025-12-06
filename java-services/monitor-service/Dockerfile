@@ -4,18 +4,23 @@
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# Copy parent pom
+# 复制父 POM 和所有子模块的 POM(Maven 需要解析所有模块)
 COPY pom.xml ./
+COPY java-services/gateway-service/pom.xml ./java-services/gateway-service/
+COPY java-services/document-service/pom.xml ./java-services/document-service/
+COPY java-services/session-service/pom.xml ./java-services/session-service/
+COPY java-services/auth-service/pom.xml ./java-services/auth-service/
 COPY java-services/monitor-service/pom.xml ./java-services/monitor-service/
+COPY java-services/config-service/pom.xml ./java-services/config-service/
 
 # Download dependencies
-RUN mvn dependency:go-offline -B -f java-services/monitor-service/pom.xml || true
+RUN mvn dependency:go-offline -pl java-services/monitor-service -am
 
 # Copy source code
 COPY java-services/monitor-service/src ./java-services/monitor-service/src
 
 # Build application
-RUN mvn clean package -DskipTests -f java-services/monitor-service/pom.xml
+RUN mvn clean package -pl java-services/monitor-service -am -Dmaven.test.skip=true
 
 # Stage 2: Runtime
 FROM eclipse-temurin:17-jre-alpine

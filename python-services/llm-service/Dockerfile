@@ -3,7 +3,7 @@ FROM python:3.10-slim as builder
 
 WORKDIR /app
 
-# Install dependencies
+# Copy and install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir --user -r requirements.txt
 
@@ -15,8 +15,8 @@ WORKDIR /app
 # Copy dependencies from builder
 COPY --from=builder /root/.local /root/.local
 
-# Copy application code
-COPY app/ ./app/
+# Copy all application files
+COPY . .
 
 # Make sure scripts in .local are usable
 ENV PATH=/root/.local/bin:$PATH

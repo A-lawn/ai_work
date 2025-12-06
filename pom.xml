@@ -29,7 +29,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         
         <!-- Spring Boot -->
-        <spring-boot.version>3.1.5</spring-boot.version>
+        <spring-boot.version>3.2.0</spring-boot.version>
         
         <!-- Spring Cloud -->
         <spring-cloud.version>2022.0.4</spring-cloud.version>
@@ -38,25 +38,25 @@
         <spring-cloud-alibaba.version>2022.0.0.0</spring-cloud-alibaba.version>
         
         <!-- Database -->
-        <postgresql.version>42.6.0</postgresql.version>
-        <mybatis-plus.version>3.5.4</mybatis-plus.version>
+        <postgresql.version>42.6.2</postgresql.version>
+        <mybatis-plus.version>3.5.5</mybatis-plus.version>
         
         <!-- Redis -->
-        <jedis.version>5.0.2</jedis.version>
+        <jedis.version>5.0.3</jedis.version>
         
         <!-- Utilities -->
         <lombok.version>1.18.30</lombok.version>
-        <mapstruct.version>1.5.5.Final</mapstruct.version>
-        <hutool.version>5.8.22</hutool.version>
+        <mapstruct.version>1.6.0</mapstruct.version>
+        <hutool.version>5.8.30</hutool.version>
         
         <!-- Monitoring -->
         <micrometer.version>1.11.5</micrometer.version>
         
         <!-- MinIO -->
-        <minio.version>8.5.7</minio.version>
+        <minio.version>8.6.0</minio.version>
         
         <!-- JWT -->
-        <jjwt.version>0.12.3</jjwt.version>
+        <jjwt.version>0.12.6</jjwt.version>
     </properties>
 
     <dependencyManagement>

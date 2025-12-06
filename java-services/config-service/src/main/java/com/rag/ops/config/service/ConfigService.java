@@ -1,7 +1,6 @@
 package com.rag.ops.config.service;
 
 import com.alibaba.cloud.nacos.NacosConfigManager;
-import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.rag.ops.config.client.LlmServiceClient;
 import com.rag.ops.config.dto.*;
@@ -240,7 +239,8 @@ public class ConfigService {
      */
     private void syncToNacos(SystemConfig config) {
         try {
-            ConfigService nacosConfigService = nacosConfigManager.getConfigService();
+            com.alibaba.nacos.api.config.ConfigService nacosConfigService = nacosConfigManager.getConfigService();
+            //ConfigService nacosConfigService = nacosConfigManager.getConfigService();
             String dataId = "system-config-" + config.getConfigKey();
             
             boolean result = nacosConfigService.publishConfig(

@@ -263,8 +263,8 @@ services:
   # API 网关服务
   gateway-service:
     build:
-      context: ./java-services/gateway-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: java-services/gateway-service/Dockerfile
     container_name: gateway-service
     ports:
       - "8080:8080"
@@ -291,8 +291,8 @@ services:
   # 文档管理服务
   document-service:
     build:
-      context: ./java-services/document-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: java-services/document-service/Dockerfile
     container_name: document-service
     ports:
       - "8081:8081"
@@ -327,8 +327,8 @@ services:
   # 会话管理服务
   session-service:
     build:
-      context: ./java-services/session-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: java-services/session-service/Dockerfile
     container_name: session-service
     ports:
       - "8082:8082"
@@ -358,8 +358,8 @@ services:
   # 认证授权服务
   auth-service:
     build:
-      context: ./java-services/auth-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: java-services/auth-service/Dockerfile
     container_name: auth-service
     ports:
       - "8083:8083"
@@ -388,8 +388,8 @@ services:
   # 监控日志服务
   monitor-service:
     build:
-      context: ./java-services/monitor-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: java-services/monitor-service/Dockerfile
     container_name: monitor-service
     ports:
       - "8084:8084"
@@ -416,8 +416,8 @@ services:
   # 配置管理服务
   config-service:
     build:
-      context: ./java-services/config-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: java-services/config-service/Dockerfile
     container_name: config-service
     ports:
       - "8085:8085"
